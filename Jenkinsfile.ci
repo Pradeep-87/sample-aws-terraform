@@ -1,0 +1,53 @@
+pipeline {
+  agent any
+
+  environment {
+    TF_DIR = "terraform"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Terraform Init') {
+      steps {
+        dir("${TF_DIR}") {
+          sh 'terraform init -input=false'
+        }
+      }
+    }
+
+    stage('Terraform Format') {
+      steps {
+        dir("${TF_DIR}") {
+          sh 'terraform fmt -check -recursive'
+        }
+      }
+    }
+
+    stage('Terraform Validate') {
+      steps {
+        dir("${TF_DIR}") {
+          sh 'terraform validate'
+        }
+      }
+    }
+
+    stage('Terraform Plan') {
+      steps {
+        dir("${TF_DIR}") {
+          sh 'terraform plan -out=tfplan'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'terraform/tfplan', allowEmptyArchive: true
+    }
+  }
+}
